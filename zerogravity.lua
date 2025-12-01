@@ -1,7 +1,6 @@
--- V2 -- FULL Venom X V2 for Fling Things And People (Roblox 2025) - All Features Implemented + Rayfield GUI
--- Keyless, Byfron Safe, Works on Xeno/Zeno + All Executors
--- Anti-Kick, Auras, Grabs, Explosions, Trolls - Everything!
--- Upload to GitHub for Loadstring: https://raw.githubusercontent.com/Lololmdjbaw90/zerogravity.lua/main/zerogravity.lua
+-- Venom X V2 for Fling Things And People (Roblox 2025) - FULL Hub with All Features + Client Visuals
+-- Owned by Lololmdjbaw90 and Rescripted by Arix9032
+-- Key: 123 | Byfron Safe, Works on All Executors
 
 loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
 
@@ -215,18 +214,7 @@ local function cleanupConnections(connectionTable)
 end
 
 local function getVersion()
-    local url = "https://raw.githubusercontent.com/Undebolted/FTAP/main/VERSION.json"
-    local success, response = pcall(function()
-        return game:HttpGet(url)
-    end)
-
-    if success then
-        local data = HttpService:JSONDecode(response)
-        return data.version
-    else
-        warn("Failed to get version: " .. response)
-        return "Unknown"
-    end
+    return "8.2-stable" -- Removed external check
 end
 
 local function spawnItem(itemName, position, orientation)
@@ -880,41 +868,13 @@ end
 
 
 
-local version = getVersion()
-
-local whitelistIdsStr = game:HttpGet("https://raw.githubusercontent.com/Undebolted/FTAP/main/WhitelistedUserId.txt")
-local whitelistIdsTbl = HttpService:JSONDecode(whitelistIdsStr)
-local whitelistIds = {}
-
-for id, _ in pairs(whitelistIdsTbl) do
-    if tonumber(id) then
-        table.insert(whitelistIds, tonumber(id))
-        print(id)
-    end
-end
-
-local isWhitelisted = false
-for _, v in pairs(whitelistIds) do
-    if v == localPlayer.UserId then
-        isWhitelisted = true
-        break
-    end
-end
-
-local localVersion = "8.2-stable"
-if localVersion ~= version then
-    Rayfield:Notify({Title = "Venom X",Content = "Script.Ftap",Duration = 6.5,Image = 4483362458,})
-    setclipboard('loadstring(game:HttpGet("https://raw.githubusercontent.com/Undebolted/FTAP/main/Script.lua",true))()')
-    wait(12)
-    Rayfield:Destroy()
-    wait(9e9)
-end
+local localVersion = "8.2-stable" -- Removed external version check
 
 local Window = Rayfield:CreateWindow({
     Name = "Venom X V2",
     Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
     LoadingTitle = "Venom X Loaded",
-    LoadingSubtitle = "by kickall",
+    LoadingSubtitle = "Owned by Lololmdjbaw90 and Rescripted by Arix9032",
     Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
  
     DisableRayfieldPrompts = false,
@@ -1939,6 +1899,276 @@ local Input = FunTab:CreateInput({
     Callback = cleanupConnections(connections)
 })
 
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Bang Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            bangAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local head = player.Character:FindFirstChild("Head")
+                            if head then
+                                CreateLine:FireServer(head, playerCharacter.Head.Position)
+                                wait(0.05)
+                                DestroyLine:FireServer()
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(bangAuraCoroutine)
+        else
+            if bangAuraCoroutine then
+                coroutine.close(bangAuraCoroutine)
+                bangAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Telekinesis",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            telekinesisCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, 50, 0)
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(telekinesisCoroutine)
+        else
+            if telekinesisCoroutine then
+                coroutine.close(telekinesisCoroutine)
+                telekinesisCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "kill aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            killAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            player.Character:BreakJoints()
+                        end
+                    end
+                    wait(0.2)
+                end
+            end)
+            coroutine.resume(killAuraCoroutine)
+        else
+            if killAuraCoroutine then
+                coroutine.close(killAuraCoroutine)
+                killAuraCoroutine = nil
+            end
+        end
+    end,
+})
+-- NEW: Visuals Tab for Client-Side Trolls (Add after existing tabs)
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847) -- New tab
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance)
+local ESPEnabled = false
+local ESPObjects = {} -- Store drawings per player
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Player ESP (Boxes + Info)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            if head then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = Color3.new(1, 0, 0) -- Red for enemies
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
 
 local Toggle = AuraTab:CreateToggle({
     Name = "Bang Aura",
