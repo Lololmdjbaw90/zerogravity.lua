@@ -1,4 +1,4 @@
--- Venom X V2 for Fling Things And People (Roblox 2025) - FULL Hub with All Features + Client Visuals
+-- Venom X V2 for Fling Things And People (Roblox 2025) - FULL Hub with All Features + Client Visuals + New Auras + No Gravity Grab + Targeting
 -- Owned by Lololmdjbaw90 and Rescripted by Arix9032
 -- Key: 123 | Byfron Safe, Works on All Executors
 
@@ -1985,17 +1985,190 @@ local Toggle = AuraTab:CreateToggle({
         end
     end,
 })
--- NEW: Visuals Tab for Client-Side Trolls (Add after existing tabs)
-local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847) -- New tab
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
 
-local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances - Perfect for trolling."})
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
 
--- ESP Toggle (Boxes + Names + Distance)
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
 local ESPEnabled = false
-local ESPObjects = {} -- Store drawings per player
+local ESPObjects = {}
 
 local Toggle = VisualsTab:CreateToggle({
-    Name = "Player ESP (Boxes + Info)",
+    Name = "Full ESP (Boxes + Info + Health)",
     CurrentValue = false,
     Flag = "ESP",
     Callback = function(enabled)
@@ -2069,7 +2242,8 @@ RunService.RenderStepped:Connect(function()
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local root = player.Character.HumanoidRootPart
             local head = player.Character:FindFirstChild("Head")
-            if head then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
                 local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
                 local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
                 
@@ -2082,12 +2256,13 @@ RunService.RenderStepped:Connect(function()
                             ESPObjects[player] = playerDrawings
                         end
                         
-                        -- Box
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
                         local box = playerDrawings.Box or Drawing.new("Square")
                         box.Visible = true
                         box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
                         box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
-                        box.Color = Color3.new(1, 0, 0) -- Red for enemies
+                        box.Color = teamColor
                         box.Thickness = 2
                         box.Filled = false
                         box.Transparency = 0.7
@@ -2096,12 +2271,23 @@ RunService.RenderStepped:Connect(function()
                         -- Name Tag
                         local name = playerDrawings.Name or Drawing.new("Text")
                         name.Visible = true
-                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m]"
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
                         name.Size = 16
                         name.Position = Vector2.new(headPos.X, headPos.Y - 20)
                         name.Color = Color3.new(1, 1, 1)
                         name.Outline = true
                         playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
                     end
                     
                     -- Tracers (Line from screen center to player)
@@ -2254,4 +2440,2205 @@ local Toggle = AuraTab:CreateToggle({
             end
         end
     end,
+})
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
+local ESPEnabled = false
+local ESPObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Full ESP (Boxes + Info + Health)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = teamColor
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Bang Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            bangAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local head = player.Character:FindFirstChild("Head")
+                            if head then
+                                CreateLine:FireServer(head, playerCharacter.Head.Position)
+                                wait(0.05)
+                                DestroyLine:FireServer()
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(bangAuraCoroutine)
+        else
+            if bangAuraCoroutine then
+                coroutine.close(bangAuraCoroutine)
+                bangAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Telekinesis",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            telekinesisCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, 50, 0)
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(telekinesisCoroutine)
+        else
+            if telekinesisCoroutine then
+                coroutine.close(telekinesisCoroutine)
+                telekinesisCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "kill aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            killAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            player.Character:BreakJoints()
+                        end
+                    end
+                    wait(0.2)
+                end
+            end)
+            coroutine.resume(killAuraCoroutine)
+        else
+            if killAuraCoroutine then
+                coroutine.close(killAuraCoroutine)
+                killAuraCoroutine = nil
+            end
+        end
+    end,
+})
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
+local ESPEnabled = false
+local ESPObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Full ESP (Boxes + Info + Health)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = teamColor
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Bang Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            bangAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local head = player.Character:FindFirstChild("Head")
+                            if head then
+                                CreateLine:FireServer(head, playerCharacter.Head.Position)
+                                wait(0.05)
+                                DestroyLine:FireServer()
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(bangAuraCoroutine)
+        else
+            if bangAuraCoroutine then
+                coroutine.close(bangAuraCoroutine)
+                bangAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Telekinesis",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            telekinesisCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, 50, 0)
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(telekinesisCoroutine)
+        else
+            if telekinesisCoroutine then
+                coroutine.close(telekinesisCoroutine)
+                telekinesisCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "kill aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            killAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            player.Character:BreakJoints()
+                        end
+                    end
+                    wait(0.2)
+                end
+            end)
+            coroutine.resume(killAuraCoroutine)
+        else
+            if killAuraCoroutine then
+                coroutine.close(killAuraCoroutine)
+                killAuraCoroutine = nil
+            end
+        end
+    end,
+})
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
+local ESPEnabled = false
+local ESPObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Full ESP (Boxes + Info + Health)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = teamColor
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Bang Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            bangAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local head = player.Character:FindFirstChild("Head")
+                            if head then
+                                CreateLine:FireServer(head, playerCharacter.Head.Position)
+                                wait(0.05)
+                                DestroyLine:FireServer()
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(bangAuraCoroutine)
+        else
+            if bangAuraCoroutine then
+                coroutine.close(bangAuraCoroutine)
+                bangAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Telekinesis",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            telekinesisCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, 50, 0)
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(telekinesisCoroutine)
+        else
+            if telekinesisCoroutine then
+                coroutine.close(telekinesisCoroutine)
+                telekinesisCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "kill aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            killAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            player.Character:BreakJoints()
+                        end
+                    end
+                    wait(0.2)
+                end
+            end)
+            coroutine.resume(killAuraCoroutine)
+        else
+            if killAuraCoroutine then
+                coroutine.close(killAuraCoroutine)
+                killAuraCoroutine = nil
+            end
+        end
+    end,
+})
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
+local ESPEnabled = false
+local ESPObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Full ESP (Boxes + Info + Health)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = teamColor
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Bang Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            bangAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local head = player.Character:FindFirstChild("Head")
+                            if head then
+                                CreateLine:FireServer(head, playerCharacter.Head.Position)
+                                wait(0.05)
+                                DestroyLine:FireServer()
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(bangAuraCoroutine)
+        else
+            if bangAuraCoroutine then
+                coroutine.close(bangAuraCoroutine)
+                bangAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Telekinesis",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            telekinesisCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = Vector3.new(0, 50, 0)
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(telekinesisCoroutine)
+        else
+            if telekinesisCoroutine then
+                coroutine.close(telekinesisCoroutine)
+                telekinesisCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "kill aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            killAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            player.Character:BreakJoints()
+                        end
+                    end
+                    wait(0.2)
+                end
+            end)
+            coroutine.resume(killAuraCoroutine)
+        else
+            if killAuraCoroutine then
+                coroutine.close(killAuraCoroutine)
+                killAuraCoroutine = nil
+            end
+        end
+    end,
+})
+local Toggle = AuraTab:CreateToggle({
+    Name = "Magnetic Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            magneticAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local hrp = player.Character.HumanoidRootPart
+                            if hrp then
+                                hrp.AssemblyLinearVelocity = (playerCharacter.HumanoidRootPart.Position - hrp.Position).Unit * 50
+                            end
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+            coroutine.resume(magneticAuraCoroutine)
+        else
+            if magneticAuraCoroutine then
+                coroutine.close(magneticAuraCoroutine)
+                magneticAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "No Gravity Aura",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravAuraCoroutine = coroutine.create(function()
+                while true do
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= localPlayer and player.Character and (player.Character.HumanoidRootPart.Position - playerCharacter.HumanoidRootPart.Position).Magnitude < auraRadius then
+                            local char = player.Character
+                            if char then
+                                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                                for _, part in pairs(char:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    wait(0.1)
+                end
+            end)
+            coroutine.resume(noGravAuraCoroutine)
+        else
+            if noGravAuraCoroutine then
+                coroutine.close(noGravAuraCoroutine)
+                noGravAuraCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- No Gravity Grab (Persist after release + idle)
+local Toggle = GrabTab:CreateToggle({
+    Name = "No Gravity Grab (Persist Fly)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            noGravGrabCoroutine = coroutine.create(function()
+                while true do
+                    local child = workspace:FindFirstChild("GrabParts")
+                    if child then
+                        local grabPart = child:FindFirstChild("GrabPart")
+                        local grabbedPart = grabPart:FindFirstChild("WeldConstraint").Part1
+                        local char = grabbedPart.Parent
+                        if char then
+                            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Freefall)
+                            for _, part in pairs(char:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    part.CustomPhysicalProperties = PhysicalProperties.new(0, 0.3, 0.5, 1, 1)
+                                end
+                            end
+                            -- Persist after release
+                            local persistConn = child.AncestryChanged:Connect(function()
+                                if not child.Parent then
+                                    task.delay(5, function() -- Persist for 5 sec after release
+                                        char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Physics)
+                                        for _, part in pairs(char:GetChildren()) do
+                                            if part:IsA("BasePart") then
+                                                part.CustomPhysicalProperties = nil
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        end
+                    end
+                    wait()
+                end
+            end)
+            coroutine.resume(noGravGrabCoroutine)
+        else
+            if noGravGrabCoroutine then
+                coroutine.close(noGravGrabCoroutine)
+                noGravGrabCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Targeting Feature (Select player for auto-kill loop)
+local TargetPlayer = nil
+local TargetDropdown = AuraTab:CreateDropdown({
+    Name = "Select Target for Auto-Kill",
+    Options = playerList,
+    CurrentOption = "",
+    Flag = "Target",
+    Callback = function(option)
+        TargetPlayer = Players:FindFirstChild(option)
+    end,
+})
+
+local Toggle = AuraTab:CreateToggle({
+    Name = "Auto-Kill Target (Keep Killing)",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            targetKillCoroutine = coroutine.create(function()
+                while TargetPlayer and TargetPlayer.Character do
+                    TargetPlayer.Character:BreakJoints()
+                    wait(0.5) -- Loop kill
+                end
+            end)
+            coroutine.resume(targetKillCoroutine)
+        else
+            if targetKillCoroutine then
+                coroutine.close(targetKillCoroutine)
+                targetKillCoroutine = nil
+            end
+        end
+    end,
+})
+
+-- Keybinds Tab (Now Working - Bind Toggles)
+local Paragraph = KeybindsTab:CreateParagraph({Title = "Keybinds", Content = "Set keys for features"})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Strength",
+    CurrentKeybind = "F",
+    Flag = "KeyStrength",
+    Callback = function(key)
+        -- Toggle Strength feature on key press
+        local toggle = Rayfield.Flags.StrengthToggle
+        Rayfield.Flags.StrengthToggle = not toggle
+    end,
+})
+
+local Keybind = KeybindsTab:CreateKeybind({
+    Name = "Toggle Poison Grab",
+    CurrentKeybind = "G",
+    Flag = "KeyPoison",
+    Callback = function(key)
+        local toggle = Rayfield.Flags.PoisonGrab
+        Rayfield.Flags.PoisonGrab = not toggle
+    end,
+})
+
+-- Add more keybinds for other features...
+-- e.g., for Kill Aura, Anti Grab, etc.
+
+-- [NEW FULL ESP in Visuals Tab - Enhanced with Health Bars + Team Colors]
+local VisualsTab = Window:CreateTab("👁️ Visuals", 10734951847)
+
+local Paragraph = VisualsTab:CreateParagraph({Title = "Client Visuals", Content = "ONLY YOU SEE: ESP, Tracers, Names, Aura Rings, Distances, Health Bars - Perfect for trolling."})
+
+-- ESP Toggle (Boxes + Names + Distance + Health Bar + Team Color)
+local ESPEnabled = false
+local ESPObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Full ESP (Boxes + Info + Health)",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(enabled)
+        ESPEnabled = enabled
+        if not enabled then
+            for _, drawings in pairs(ESPObjects) do
+                for _, drawing in pairs(drawings) do
+                    drawing:Remove()
+                end
+            end
+            ESPObjects = {}
+        end
+    end
+})
+
+-- Tracers Toggle
+local TracersEnabled = false
+local TracerObjects = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Tracers (Lines to Players)",
+    CurrentValue = false,
+    Flag = "Tracers",
+    Callback = function(enabled)
+        TracersEnabled = enabled
+        if not enabled then
+            for _, line in pairs(TracerObjects) do
+                line:Remove()
+            end
+            TracerObjects = {}
+        end
+    end
+})
+
+-- Aura Ring Toggle (Circle around enemies)
+local AuraRingEnabled = false
+local AuraRings = {}
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Aura Rings (Enemy Circles)",
+    CurrentValue = false,
+    Flag = "AuraRing",
+    Callback = function(enabled)
+        AuraRingEnabled = enabled
+        if not enabled then
+            for _, ring in pairs(AuraRings) do
+                ring:Remove()
+            end
+            AuraRings = {}
+        end
+    end
+})
+
+-- Distance Tags Toggle
+local DistanceEnabled = false
+
+local Toggle = VisualsTab:CreateToggle({
+    Name = "Distance Tags",
+    CurrentValue = false,
+    Flag = "Distance",
+    Callback = function(enabled)
+        DistanceEnabled = enabled
+    end
+})
+
+-- MAIN VISUALS LOOP (RunService.RenderStepped - Client Only, Undetectable)
+RunService.RenderStepped:Connect(function()
+    local myPos = playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") and playerCharacter.HumanoidRootPart.Position or Vector3.new()
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if head and humanoid then
+                local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+                local headPos, headOnScreen = workspace.CurrentCamera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                
+                if onScreen then
+                    -- ESP Box + Name
+                    if ESPEnabled then
+                        local playerDrawings = ESPObjects[player]
+                        if not playerDrawings then
+                            playerDrawings = {}
+                            ESPObjects[player] = playerDrawings
+                        end
+                        
+                        -- Box (Team Color)
+                        local teamColor = player.TeamColor.Color or Color3.new(1, 0, 0)
+                        local box = playerDrawings.Box or Drawing.new("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(2000 / screenPos.Z, 2500 / screenPos.Z)
+                        box.Position = Vector2.new(screenPos.X - box.Size.X / 2, screenPos.Y - box.Size.Y / 2)
+                        box.Color = teamColor
+                        box.Thickness = 2
+                        box.Filled = false
+                        box.Transparency = 0.7
+                        playerDrawings.Box = box
+                        
+                        -- Name Tag
+                        local name = playerDrawings.Name or Drawing.new("Text")
+                        name.Visible = true
+                        name.Text = player.Name .. " [" .. math.floor((myPos - root.Position).Magnitude) .. "m] [HP: " .. humanoid.Health .. "/" .. humanoid.MaxHealth .. "]"
+                        name.Size = 16
+                        name.Position = Vector2.new(headPos.X, headPos.Y - 20)
+                        name.Color = Color3.new(1, 1, 1)
+                        name.Outline = true
+                        playerDrawings.Name = name
+
+                        -- Health Bar
+                        local healthBar = playerDrawings.HealthBar or Drawing.new("Line")
+                        local healthPct = humanoid.Health / humanoid.MaxHealth
+                        healthBar.Visible = true
+                        healthBar.From = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2)
+                        healthBar.To = Vector2.new(screenPos.X - box.Size.X / 2 - 5, screenPos.Y - box.Size.Y / 2 + box.Size.Y * (1 - healthPct))
+                        healthBar.Color = Color3.new(1 - healthPct, healthPct, 0)
+                        healthBar.Thickness = 3
+                        healthBar.Transparency = 0.8
+                        playerDrawings.HealthBar = healthBar
+                    end
+                    
+                    -- Tracers (Line from screen center to player)
+                    if TracersEnabled then
+                        local line = TracerObjects[player] or Drawing.new("Line")
+                        line.Visible = true
+                        line.From = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+                        line.To = Vector2.new(screenPos.X, screenPos.Y)
+                        line.Color = Color3.new(1, 0, 0)
+                        line.Thickness = 2
+                        line.Transparency = 0.5
+                        TracerObjects[player] = line
+                    end
+                    
+                    -- Aura Ring (Circle around feet)
+                    if AuraRingEnabled then
+                        local ring = AuraRings[player] or Drawing.new("Circle")
+                        ring.Visible = true
+                        ring.Position = Vector2.new(screenPos.X, screenPos.Y + 1000 / screenPos.Z) -- Feet approx
+                        ring.Radius = 50 / screenPos.Z * 10 -- Scale with distance
+                        ring.Color = Color3.new(0, 1, 0) -- Green aura
+                        ring.Thickness = 3
+                        ring.Filled = false
+                        ring.Transparency = 0.6
+                        AuraRings[player] = ring
+                    end
+                else
+                    -- Off-screen: Hide drawings
+                    if ESPObjects[player] then
+                        for _, drawing in pairs(ESPObjects[player]) do
+                            drawing.Visible = false
+                        end
+                    end
+                    if TracerObjects[player] then TracerObjects[player].Visible = false end
+                    if AuraRings[player] then AuraRings[player].Visible = false end
+                end
+            end
+        else
+            -- Player left/dead: Cleanup
+            if ESPObjects[player] then
+                for _, drawing in pairs(ESPObjects[player]) do
+                    drawing:Remove()
+                end
+                ESPObjects[player] = nil
+            end
+            if TracerObjects[player] then
+                TracerObjects[player]:Remove()
+                TracerObjects[player] = nil
+            end
+            if AuraRings[player] then
+                AuraRings[player]:Remove()
+                AuraRings[player] = nil
+            end
+        end
+    end
+end)
+
+-- Cleanup on player leaving
+Players.PlayerRemoving:Connect(function(player)
+    if ESPObjects[player] then
+        for _, drawing in pairs(ESPObjects[player]) do
+            drawing:Remove()
+        end
+    end
+    if TracerObjects[player] then TracerObjects[player]:Remove() end
+    if AuraRings[player] then AuraRings[player]:Remove() end
+end)
+
+Rayfield:Notify({
+    Title = "Venom X V2 Loaded!",
+    Content = "Owned by Lololmdjbaw90 and Rescripted by Arix9032 - Full Features Ready!",
+    Duration = 6,
+    Image = 4483362458
 })
