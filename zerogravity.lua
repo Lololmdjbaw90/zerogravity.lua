@@ -1,8 +1,7 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
-
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua', true))()
 -- Create the main window
 local Window = Rayfield:CreateWindow({
     Name = "Gracity Hub",
