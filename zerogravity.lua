@@ -1,12 +1,11 @@
--- FTAP ULTIMATE FULL HUB (RAYFIELD SAFE / NO CRASH)
+-- FTAP ULTIMATE FULL HUB (OLD RAYFIELD COMPATIBLE)
 
--- Load Rayfield
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
     Name = "FTAP ULTIMATE FULL HUB",
     LoadingTitle = "FTAP Ultimate",
-    LoadingSubtitle = "All Features Loaded Safely",
+    LoadingSubtitle = "Old Rayfield Compatible",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "FTAP_Ultimate_Full"
@@ -14,224 +13,215 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
-local function notify(t, c)
-    Rayfield:Notify({
-        Title = t,
-        Content = c,
-        Duration = 6
-    })
-end
-
 -- SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
--- SAFE CHARACTER GETTERS
-local function getCharacter()
+-- SAFE CHARACTER
+local function getChar()
     return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 end
 
 local function getHRP()
-    local char = getCharacter()
-    return char:FindFirstChild("HumanoidRootPart")
+    return getChar():FindFirstChild("HumanoidRootPart")
 end
 
 local function getHumanoid()
-    local char = getCharacter()
-    return char:FindFirstChildOfClass("Humanoid")
+    return getChar():FindFirstChildOfClass("Humanoid")
 end
 
--- SAFE FOLDERS (NO WAITFORCHILD)
+-- SAFE TOYS FOLDER
 local ToysFolder =
     Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
     or Instance.new("Folder", Workspace)
 
--- =========================
+-- =====================
 -- STATE
--- =========================
-local State = {
-    Teleport = false,
-    SuperThrow = false,
-    AntiGrab = false,
-    InfiniteJump = false,
+-- =====================
+local Teleport = false
+local InfiniteJump = false
+local SuperThrow = false
+local AntiVoid = false
 
-    Aura = {
-        Enabled = false,
-        Parts = {},
-        Speed = 50,
-        Radius = 40
-    },
+local WalkSpeed = 16
 
-    Pallet = {
-        Enabled = false,
-        Power = 700,
-        Targets = {},
-        Part = nil
-    }
-}
+-- Aura
+local AuraEnabled = false
+local AuraRadius = 35
+local AuraSpeed = 50
+local AuraParts = {}
 
--- =========================
--- UI TABS (VALID ICONS ONLY)
--- =========================
+-- Pallet
+local PalletEnabled = false
+local PalletPower = 700
+local PalletTargets = {}
+local PalletPart = nil
 
-local MainTab   = Window:CreateTab("Main", "home")
-local AuraTab   = Window:CreateTab("Aura", "star")
-local TargetTab = Window:CreateTab("Target / Fling", "target")
-local MiscTab   = Window:CreateTab("Misc", "settings")
+-- =====================
+-- TABS (VALID ICONS)
+-- =====================
+Window:CreateTab("Main", "home")
+Window:CreateTab("Aura", "star")
+Window:CreateTab("Fling", "target")
+Window:CreateTab("Misc", "settings")
 
--- =========================
--- MAIN TAB
--- =========================
+-- =====================
+-- MAIN FEATURES
+-- =====================
 
-local Main = MainTab:CreateSection("Core")
-
-Main:CreateToggle({
+Rayfield:CreateToggle({
     Name = "Teleport to Mouse (Z)",
+    CurrentValue = false,
     Callback = function(v)
-        State.Teleport = v
+        Teleport = v
     end
 })
 
-Main:CreateToggle({
+Rayfield:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Callback = function(v)
+        InfiniteJump = v
+    end
+})
+
+Rayfield:CreateToggle({
     Name = "Super Throw",
+    CurrentValue = false,
     Callback = function(v)
-        State.SuperThrow = v
+        SuperThrow = v
     end
 })
 
-Main:CreateToggle({
-    Name = "Anti Grab",
+Rayfield:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {16, 150},
+    Increment = 1,
+    CurrentValue = 16,
     Callback = function(v)
-        State.AntiGrab = v
-    end
-})
-
--- =========================
--- AURA TAB
--- =========================
-
-local Aura = AuraTab:CreateSection("Aura System")
-
-Aura:CreateToggle({
-    Name = "Enable Aura",
-    Callback = function(v)
-        State.Aura.Enabled = v
-        if v then
-            State.Aura.Parts = {}
-            for _, toy in ipairs(ToysFolder:GetChildren()) do
-                local part = toy:FindFirstChild("Main") or toy:FindFirstChildWhichIsA("BasePart")
-                if part then
-                    table.insert(State.Aura.Parts, part)
-                end
-            end
-            notify("Aura", "Collected " .. #State.Aura.Parts .. " parts")
+        WalkSpeed = v
+        local hum = getHumanoid()
+        if hum then
+            hum.WalkSpeed = v
         end
     end
 })
 
-Aura:CreateSlider({
+-- =====================
+-- AURA
+-- =====================
+
+Rayfield:CreateToggle({
+    Name = "Enable Aura",
+    CurrentValue = false,
+    Callback = function(v)
+        AuraEnabled = v
+        if v then
+            AuraParts = {}
+            for _, toy in ipairs(ToysFolder:GetChildren()) do
+                local part =
+                    toy:FindFirstChild("Main")
+                    or toy:FindFirstChildWhichIsA("BasePart")
+                if part then
+                    table.insert(AuraParts, part)
+                end
+            end
+        end
+    end
+})
+
+Rayfield:CreateSlider({
+    Name = "Aura Radius",
+    Range = {10, 100},
+    Increment = 1,
+    CurrentValue = 35,
+    Callback = function(v)
+        AuraRadius = v
+    end
+})
+
+Rayfield:CreateSlider({
     Name = "Aura Speed",
     Range = {1, 150},
     Increment = 1,
     CurrentValue = 50,
     Callback = function(v)
-        State.Aura.Speed = v
+        AuraSpeed = v
     end
 })
 
-Aura:CreateSlider({
-    Name = "Aura Radius",
-    Range = {5, 100},
-    Increment = 1,
-    CurrentValue = 40,
+-- =====================
+-- PALLET FLING
+-- =====================
+
+Rayfield:CreateToggle({
+    Name = "Pallet Fling",
+    CurrentValue = false,
     Callback = function(v)
-        State.Aura.Radius = v
+        PalletEnabled = v
     end
 })
 
--- =========================
--- TARGET / FLING TAB
--- =========================
-
-local Target = TargetTab:CreateSection("Pallet Fling")
-
-Target:CreateToggle({
-    Name = "Enable Pallet Fling",
-    Callback = function(v)
-        State.Pallet.Enabled = v
-    end
-})
-
-Target:CreateSlider({
-    Name = "Fling Power",
+Rayfield:CreateSlider({
+    Name = "Pallet Power",
     Range = {100, 1500},
     Increment = 50,
     CurrentValue = 700,
     Callback = function(v)
-        State.Pallet.Power = v
+        PalletPower = v
     end
 })
 
-local playerNames = {}
+local PlayerNames = {}
 for _, p in ipairs(Players:GetPlayers()) do
     if p ~= LocalPlayer then
-        table.insert(playerNames, p.DisplayName)
+        table.insert(PlayerNames, p.DisplayName)
     end
 end
 
-Target:CreateDropdown({
+Rayfield:CreateDropdown({
     Name = "Add Target",
-    Options = playerNames,
+    Options = PlayerNames,
     Callback = function(name)
         for _, p in ipairs(Players:GetPlayers()) do
             if p.DisplayName == name then
-                table.insert(State.Pallet.Targets, p)
-                notify("Target Added", name)
-                break
+                table.insert(PalletTargets, p)
             end
         end
     end
 })
 
--- =========================
--- MISC TAB
--- =========================
+-- =====================
+-- MISC
+-- =====================
 
-local Misc = MiscTab:CreateSection("Misc")
-
-Misc:CreateToggle({
-    Name = "Infinite Jump",
-    Callback = function(v)
-        State.InfiniteJump = v
-    end
-})
-
-Misc:CreateToggle({
+Rayfield:CreateToggle({
     Name = "Anti Void",
+    CurrentValue = false,
     Callback = function(v)
+        AntiVoid = v
         Workspace.FallenPartsDestroyHeight = v and -10000 or -500
     end
 })
 
--- =========================
+-- =====================
 -- INPUT
--- =========================
+-- =====================
 
 UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Z and State.Teleport then
+    if Teleport and input.KeyCode == Enum.KeyCode.Z then
         local hrp = getHRP()
         if hrp and Mouse.Hit then
             hrp.CFrame = CFrame.new(Mouse.Hit.Position + Vector3.new(0, 5, 0))
         end
     end
 
-    if State.InfiniteJump and input.UserInputType == Enum.UserInputType.Keyboard then
+    if InfiniteJump and input.UserInputType == Enum.UserInputType.Keyboard then
         local hum = getHumanoid()
         if hum then
             hum:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -239,13 +229,13 @@ UIS.InputBegan:Connect(function(input)
     end
 end)
 
--- =========================
+-- =====================
 -- LOOPS
--- =========================
+-- =====================
 
 RunService.Heartbeat:Connect(function()
     -- Super Throw
-    if State.SuperThrow then
+    if SuperThrow then
         local gp = Workspace:FindFirstChild("GrabParts")
         if gp and gp:FindFirstChild("DragPart") then
             gp.DragPart.AssemblyLinearVelocity =
@@ -254,21 +244,21 @@ RunService.Heartbeat:Connect(function()
     end
 
     -- Aura
-    if State.Aura.Enabled then
+    if AuraEnabled then
         local hrp = getHRP()
         if hrp then
-            for i, part in ipairs(State.Aura.Parts) do
+            for i, part in ipairs(AuraParts) do
                 if part and part.Parent then
                     local angle =
-                        (i / #State.Aura.Parts) * math.pi * 2
-                        + tick() * (State.Aura.Speed / 50)
+                        (i / #AuraParts) * math.pi * 2
+                        + tick() * (AuraSpeed / 50)
 
                     part.CFrame =
                         hrp.CFrame *
                         CFrame.new(
-                            math.cos(angle) * State.Aura.Radius,
+                            math.cos(angle) * AuraRadius,
                             3,
-                            math.sin(angle) * State.Aura.Radius
+                            math.sin(angle) * AuraRadius
                         )
                 end
             end
@@ -276,11 +266,11 @@ RunService.Heartbeat:Connect(function()
     end
 
     -- Pallet Fling
-    if State.Pallet.Enabled then
-        if not State.Pallet.Part then
+    if PalletEnabled then
+        if not PalletPart then
             for _, toy in ipairs(ToysFolder:GetChildren()) do
                 if toy.Name:lower():find("pallet") then
-                    State.Pallet.Part =
+                    PalletPart =
                         toy:FindFirstChild("Main")
                         or toy:FindFirstChildWhichIsA("BasePart")
                     break
@@ -288,18 +278,26 @@ RunService.Heartbeat:Connect(function()
             end
         end
 
-        if State.Pallet.Part then
-            for _, tgt in ipairs(State.Pallet.Targets) do
+        if PalletPart then
+            for _, tgt in ipairs(PalletTargets) do
                 if tgt.Character and tgt.Character:FindFirstChild("HumanoidRootPart") then
                     local thrp = tgt.Character.HumanoidRootPart
-                    State.Pallet.Part.CFrame = thrp.CFrame + Vector3.new(0, -4, 0)
-                    State.Pallet.Part.AssemblyLinearVelocity =
-                        Vector3.new(0, State.Pallet.Power, 0)
+                    PalletPart.CFrame = thrp.CFrame + Vector3.new(0, -4, 0)
+                    PalletPart.AssemblyLinearVelocity =
+                        Vector3.new(0, PalletPower, 0)
                 end
             end
         end
     end
 end)
+
+Rayfield:Notify({
+    Title = "FTAP HUB LOADED",
+    Content = "All features loaded successfully",
+    Duration = 6
+})
+
+print("FTAP ULTIMATE FULL HUB LOADED")
 
 notify("FTAP Hub Loaded", "All features initialized successfully")
 print("FTAP ULTIMATE FULL HUB LOADED")
