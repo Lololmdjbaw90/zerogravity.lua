@@ -1,8 +1,7 @@
 repeat task.wait() until game:IsLoaded()
 task.wait(2)
 
--- Load Rayfield UI Library
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Lololmdjbaw90/zerogravity.lua/main/zerogravity.lua", true))()
 
 -- Create the main window
 local Window = Rayfield:CreateWindow({
